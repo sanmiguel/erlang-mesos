@@ -130,6 +130,17 @@ ExecutorDriverStatus executor_start(ExecutorPtrPair state)
     assert(state.driver != NULL);
 
     MesosExecutorDriver* driver = reinterpret_cast<MesosExecutorDriver*> (state.driver);
+    assert(state.executor != NULL);
+    CExecutor* executor = reinterpret_cast<CExecutor*>(state.executor);
+    ErlNifEnv* env = enif_alloc_env();
+
+    printf("executor_starting\n");
+    ERL_NIF_TERM message = enif_make_tuple2(env,
+                            enif_make_atom(env, "$foo"),
+                            enif_make_atom(env, "executor_starting"));
+    
+    enif_send(NULL, executor->pid, env, message);
+    enif_clear_env(env);
     return driver->start();
 }
 
@@ -138,6 +149,17 @@ ExecutorDriverStatus executor_stop(ExecutorPtrPair state)
     assert(state.driver != NULL);
 
     MesosExecutorDriver* driver = reinterpret_cast<MesosExecutorDriver*> (state.driver);
+    assert(state.executor != NULL);
+    CExecutor* executor = reinterpret_cast<CExecutor*>(state.executor);
+    ErlNifEnv* env = enif_alloc_env();
+
+    printf("executor_stopping\n");
+    ERL_NIF_TERM message = enif_make_tuple2(env,
+                            enif_make_atom(env, "$foo"),
+                            enif_make_atom(env, "executor_stopping"));
+    
+    enif_send(NULL, executor->pid, env, message);
+    enif_clear_env(env);
     return driver->stop();
 }
 
@@ -146,6 +168,17 @@ ExecutorDriverStatus executor_abort(ExecutorPtrPair state)
     assert(state.driver != NULL);
 
     MesosExecutorDriver* driver = reinterpret_cast<MesosExecutorDriver*> (state.driver);
+    assert(state.executor != NULL);
+    CExecutor* executor = reinterpret_cast<CExecutor*>(state.executor);
+    ErlNifEnv* env = enif_alloc_env();
+
+    printf("executor_aborting\n");
+    ERL_NIF_TERM message = enif_make_tuple2(env,
+                            enif_make_atom(env, "$foo"),
+                            enif_make_atom(env, "executor_aborting"));
+    
+    enif_send(NULL, executor->pid, env, message);
+    enif_clear_env(env);
     return driver->abort();
 }
 
@@ -154,6 +187,17 @@ ExecutorDriverStatus executor_join(ExecutorPtrPair state)
     assert(state.driver != NULL);
 
     MesosExecutorDriver* driver = reinterpret_cast<MesosExecutorDriver*> (state.driver);
+    assert(state.executor != NULL);
+    CExecutor* executor = reinterpret_cast<CExecutor*>(state.executor);
+    ErlNifEnv* env = enif_alloc_env();
+
+    printf("executor_joining\n");
+    ERL_NIF_TERM message = enif_make_tuple2(env,
+                            enif_make_atom(env, "$foo"),
+                            enif_make_atom(env, "executor_joining"));
+    
+    enif_send(NULL, executor->pid, env, message);
+    enif_clear_env(env);
     return driver->join();
 }
 
@@ -162,6 +206,17 @@ ExecutorDriverStatus executor_run(ExecutorPtrPair state)
     assert(state.driver != NULL);
 
     MesosExecutorDriver* driver = reinterpret_cast<MesosExecutorDriver*> (state.driver);
+    assert(state.executor != NULL);
+    CExecutor* executor = reinterpret_cast<CExecutor*>(state.executor);
+    ErlNifEnv* env = enif_alloc_env();
+
+    printf("executor_running\n");
+    ERL_NIF_TERM message = enif_make_tuple2(env,
+                            enif_make_atom(env, "$foo"),
+                            enif_make_atom(env, "executor_running"));
+    
+    enif_send(NULL, executor->pid, env, message);
+    enif_clear_env(env);
     return driver->run();
 
 }
@@ -171,6 +226,17 @@ ExecutorDriverStatus executor_sendFrameworkMessage(ExecutorPtrPair state, const 
     assert(data != NULL);    
 
     MesosExecutorDriver* driver = reinterpret_cast<MesosExecutorDriver*> (state.driver);
+    assert(state.executor != NULL);
+    CExecutor* executor = reinterpret_cast<CExecutor*>(state.executor);
+    ErlNifEnv* env = enif_alloc_env();
+
+    printf("executor_sending_fw\n");
+    ERL_NIF_TERM message = enif_make_tuple2(env,
+                            enif_make_atom(env, "$foo"),
+                            enif_make_atom(env, "executor_sending_fw"));
+    
+    enif_send(NULL, executor->pid, env, message);
+    enif_clear_env(env);
     return driver->sendFrameworkMessage(data);
 }
 ExecutorDriverStatus executor_sendStatusUpdate(ExecutorPtrPair state, ErlNifBinary* taskStatus)
@@ -183,6 +249,17 @@ ExecutorDriverStatus executor_sendStatusUpdate(ExecutorPtrPair state, ErlNifBina
     if(!deserialize<TaskStatus>(taskStatus_pb,taskStatus)) { return DRIVER_ABORTED; };
 
     MesosExecutorDriver* driver = reinterpret_cast<MesosExecutorDriver*> (state.driver);
+    assert(state.executor != NULL);
+    CExecutor* executor = reinterpret_cast<CExecutor*>(state.executor);
+    ErlNifEnv* env = enif_alloc_env();
+
+    printf("executor_sending_status\n");
+    ERL_NIF_TERM message = enif_make_tuple2(env,
+                            enif_make_atom(env, "$foo"),
+                            enif_make_atom(env, "executor_sending_status"));
+    
+    enif_send(NULL, executor->pid, env, message);
+    enif_clear_env(env);
     return driver->sendStatusUpdate(taskStatus_pb);
 }
 
@@ -193,6 +270,15 @@ void executor_destroy(ExecutorPtrPair state)
 
     MesosExecutorDriver* driver = reinterpret_cast<MesosExecutorDriver*>(state.driver);
     CExecutor* executor = reinterpret_cast<CExecutor*>(state.executor);
+    ErlNifEnv* env = enif_alloc_env();
+
+    printf("executor_destroying\n");
+    ERL_NIF_TERM message = enif_make_tuple2(env,
+                            enif_make_atom(env, "$foo"),
+                            enif_make_atom(env, "executor_destroying"));
+    
+    enif_send(NULL, executor->pid, env, message);
+    enif_clear_env(env);
 
     delete driver;
     delete executor;
@@ -206,7 +292,11 @@ void CExecutor::registered(ExecutorDriver* driver,
 {
     assert(this->pid != NULL);
 
+    printf("CB registered\n");
     ErlNifEnv* env = enif_alloc_env();
+
+    ERL_NIF_TERM debugmsg = enif_make_atom(env, "registering");
+    enif_send(NULL, this->pid, env, debugmsg);
 
     ERL_NIF_TERM executorInfo_pb = pb_obj_to_binary(env, executorInfo);
     ERL_NIF_TERM frameworkInfo_pb = pb_obj_to_binary(env, frameworkInfo);
@@ -226,6 +316,7 @@ void CExecutor::reregistered(ExecutorDriver* driver,
                       const SlaveInfo& slaveInfo)
 {
     assert(this->pid != NULL);
+    printf("CB reregistered\n");
 
     ErlNifEnv* env = enif_alloc_env();
 
@@ -242,6 +333,7 @@ void CExecutor::reregistered(ExecutorDriver* driver,
 void CExecutor::disconnected(ExecutorDriver* driver)
 {
     assert(this->pid != NULL);
+    printf("CB disconnected\n");
 
     ErlNifEnv* env = enif_alloc_env();
 
@@ -255,6 +347,7 @@ void CExecutor::disconnected(ExecutorDriver* driver)
 void CExecutor::launchTask(ExecutorDriver* driver, const TaskInfo& task)
 {
     assert(this->pid != NULL);
+    printf("CB launchTask\n");
 
     ErlNifEnv* env = enif_alloc_env();
 
@@ -271,6 +364,7 @@ void CExecutor::launchTask(ExecutorDriver* driver, const TaskInfo& task)
 void CExecutor::killTask(ExecutorDriver* driver, const TaskID& taskId)
 {
     assert(this->pid != NULL);
+    printf("CB killTask\n");
 
     ErlNifEnv* env = enif_alloc_env();
 
@@ -287,6 +381,7 @@ void CExecutor::killTask(ExecutorDriver* driver, const TaskID& taskId)
 void CExecutor::frameworkMessage(ExecutorDriver* driver, const string& data)
 {
     assert(this->pid != NULL);
+    printf("CB frameworkMessage\n");
 
     ErlNifEnv* env = enif_alloc_env();
 
@@ -302,6 +397,7 @@ void CExecutor::frameworkMessage(ExecutorDriver* driver, const string& data)
 void CExecutor::shutdown(ExecutorDriver* driver)
 {
     assert(this->pid != NULL);
+    printf("CB shutdown\n");
 
     ErlNifEnv* env = enif_alloc_env();
 
@@ -310,11 +406,13 @@ void CExecutor::shutdown(ExecutorDriver* driver)
     
     enif_send(NULL, this->pid, env, message);
     enif_clear_env(env);
+    printf("CB shutdown DONE\n");
 }
 
 void CExecutor::error(ExecutorDriver* driver, const string& messageStr)
 {
     assert(this->pid != NULL);
+    printf("CB error\n");
 
     ErlNifEnv* env = enif_alloc_env();
 

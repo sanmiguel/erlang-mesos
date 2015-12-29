@@ -74,14 +74,20 @@
 -spec start( Module :: atom(), Args :: term()) ->
     {ok, Server :: pid()} | {error, Reason :: term()}.
 start(Module, Args) ->
-    gen_server:start(?MODULE, {Module, Args}, []).
+    Ret = gen_server:start(?MODULE, {Module, Args}, []),
+    io:format("~p:start(~p, ~p)~n", [?MODULE, Module, Args]),
+    Ret.
 
 %% -----------------------------------------------------------------------------------------
 
 -spec start_link( Module :: atom(), Args :: term()) ->
     {ok, Server :: pid()} | {error, Reason :: term()}.
 start_link(Module, Args ) ->
-    gen_server:start_link(?MODULE, {Module, Args}, []).
+    io:format("~p:start_link/2~n", [?MODULE]),
+    io:format("ENV: ~n~p~n", [os:getenv()]),
+    Ret = gen_server:start_link(?MODULE, {Module, Args}, [{debug, [log, {log_to_file, "../executor.log"}]}]),
+    io:format("~p:start_link(~p, ~p)~n", [?MODULE, Module, Args]),
+    Ret.
 
 %% -----------------------------------------------------------------------------------------
 
@@ -145,6 +151,11 @@ destroy() ->
 %% -----------------------------------------------------------------------------------------
 %% -----------------------------------------------------------------------------------------
 init({Module, Args}) ->
+    io:format("executor:init({~p, ~p})~n~n", [Module, Args]),
+    Ret = init_({Module, Args}),
+    io:format("executor:init->[~p]~n~n", [Ret]),
+    Ret.
+init_({Module, Args}) ->
     
      case whereis(?MODULE) of
         undefined ->
@@ -166,13 +177,23 @@ init({Module, Args}) ->
     end.
 
 handle_call(_Request, _From, State) ->
+    io:format("executor:handle_call(~p, ~p, ~p)~n~n", [_Request, _From, State]),
     {reply, ok, State}.
 
 handle_cast(_Msg, State) ->
+    io:format("executor:handle_cast(~p, ~p)~n~n", [_Msg, State]),
   {noreply, State}.
 
 
-handle_info({registered , ExecutorInfoBin, FrameworkInfoBin, SlaveInfoBin }, #state{ handler_module = Module, handler_state = HandlerState }) ->
+handle_info(Message, State) ->
+    io:format("executor:handle_info(~p, ~p)~n~n", [Message, State]),
+    handle_info_(Message, State).
+
+handle_info_({'$foo', Step}, #state{}=State) ->
+    timer:sleep(5),
+    io:format("DEBUG: ~p~nSTATE: ~p~n", [Step, State]),
+    {noreply, State};
+handle_info_({registered , ExecutorInfoBin, FrameworkInfoBin, SlaveInfoBin }, #state{ handler_module = Module, handler_state = HandlerState }) ->
     ExecutorInfo = mesos_pb:decode_msg(ExecutorInfoBin, 'ExecutorInfo'),
     FrameworkInfo = mesos_pb:decode_msg(FrameworkInfoBin, 'FrameworkInfo'),
     SlaveInfo = mesos_pb:decode_msg(SlaveInfoBin, 'SlaveInfo'),
@@ -180,45 +201,47 @@ handle_info({registered , ExecutorInfoBin, FrameworkInfoBin, SlaveInfoBin }, #st
     {ok, State1} = Module:registered(ExecutorInfo, FrameworkInfo, SlaveInfo, HandlerState),
     {noreply, #state{ handler_module = Module, handler_state = State1 }};
 
-handle_info({reregistered, SlaveInfoBin}, #state{ handler_module = Module, handler_state = HandlerState }) ->
+handle_info_({reregistered, SlaveInfoBin}, #state{ handler_module = Module, handler_state = HandlerState }) ->
     SlaveInfo = mesos_pb:decode_msg(SlaveInfoBin, 'SlaveInfo'),
 
     {ok, State1} = Module:reregistered(SlaveInfo, HandlerState),
     {noreply, #state{ handler_module = Module, handler_state = State1 }};
 
-handle_info({disconnected}, #state{ handler_module = Module, handler_state = HandlerState }) ->
+handle_info_({disconnected}, #state{ handler_module = Module, handler_state = HandlerState }) ->
 
     {ok, State1} = Module:disconnected(HandlerState),
     {noreply, #state{ handler_module = Module, handler_state = State1 }};
 
-handle_info({launchTask, TaskInfoBin}, #state{ handler_module = Module, handler_state = HandlerState }) ->
+handle_info_({launchTask, TaskInfoBin}, #state{ handler_module = Module, handler_state = HandlerState }) ->
     TaskInfo = mesos_pb:decode_msg(TaskInfoBin, 'TaskInfo'),
 
     {ok, State1} = Module:launchTask(TaskInfo, HandlerState),
     {noreply, #state{ handler_module = Module, handler_state = State1 }};
 
-handle_info({killTask, TaskIDBin} , #state{ handler_module = Module, handler_state = HandlerState }) ->
+handle_info_({killTask, TaskIDBin} , #state{ handler_module = Module, handler_state = HandlerState }) ->
     TaskID = mesos_pb:decode_msg(TaskIDBin, 'TaskID'),
     
     {ok, State1} = Module:killTask(TaskID, HandlerState),
     {noreply, #state{ handler_module = Module, handler_state = State1 }};
 
-handle_info({frameworkMessage, Message}, #state{ handler_module = Module, handler_state = HandlerState }) ->
+handle_info_({frameworkMessage, Message}, #state{ handler_module = Module, handler_state = HandlerState }) ->
     {ok, State1} = Module:frameworkMessage(Message, HandlerState),
     {noreply, #state{ handler_module = Module, handler_state = State1 }};
 
-handle_info({shutdown}, #state{ handler_module = Module, handler_state = HandlerState }) ->
+handle_info_({shutdown}, #state{ handler_module = Module, handler_state = HandlerState }) ->
     {ok, State1} = Module:shutdown(HandlerState),
     {noreply, #state{ handler_module = Module, handler_state = State1 }};
 
-handle_info({error, Message}, #state{ handler_module = Module, handler_state = HandlerState }) ->
+handle_info_({error, Message}, #state{ handler_module = Module, handler_state = HandlerState }) ->
     {ok, State1} = Module:error(Message, HandlerState),
     {noreply, #state{ handler_module = Module, handler_state = State1 }}.
 
-code_change(_, State, _) ->
+code_change(_A, State, _C) ->
+    io:format("executor:code_change(~p, ~p, ~p)~n~n", [_A, State, _C]),
   {ok, State}.
 
 terminate(_Reason, _State) ->
+    io:format("executor:terminate(~p, ~p)~n~n", [_Reason, _State]),
     do_terminate(),
     ok.
 

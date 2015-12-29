@@ -36,27 +36,35 @@
 -define(LIBNAME, executor).
 
 init(Pid) when is_pid(Pid) ->
+    io:format("nif_executor:init(~p)~n", [Pid]),
     nif_executor_init(Pid).
 
 start() ->
+    io:format("nif_executor:start()~n", []),
     nif_executor_start().
 
 join() ->
+    io:format("nif_executor:join()~n", []),
     nif_executor_join().
 
 abort() ->
+    io:format("nif_executor:abort()~n", []),
     nif_executor_abort().
 
 stop() ->
+    io:format("nif_executor:stop()~n", []),
     nif_executor_stop().
 
 sendFrameworkMessage(Data) when is_list(Data)->
+    io:format("nif_executor:sendFrameworkMessage(~p)~n", [Data]),
     nif_executor_sendFrameworkMessage(Data).
 
 sendStatusUpdate(TaskStatus) when is_record(TaskStatus, 'TaskStatus') ->
+    io:format("nif_executor:sendStatusUpdate(~p)~n", [TaskStatus]),
     nif_executor_sendStatusUpdate(mesos_pb:encode_msg(TaskStatus)).
 
 destroy() ->
+    io:format("nif_executor:destroy()~n", []),
     nif_executor_destroy().
 
 % nif functions
@@ -90,7 +98,9 @@ init() ->
         Dir ->
             filename:join(Dir, ?LIBNAME)
     end,
-    erlang:load_nif(SoName, 0).
+    Ret = erlang:load_nif(SoName, 0),
+    io:format("Loaded executor nif [~p]~n", [Ret]),
+    Ret.
 
 not_loaded(Line) ->
     exit({not_loaded, [{module, ?MODULE}, {line, Line}]}).
